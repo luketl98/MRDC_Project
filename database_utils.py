@@ -1,33 +1,44 @@
 import yaml
-from yaml.loader import SafeLoader
-from sqlalchemy import create_engine
-    
+from sqlalchemy import create_engine, inspect
+from sqlalchemy import exc
+
 class DatabaseConnector:
 
-    def read_db_creds():
-        """read the YAML file and return 
-        the database credentials as a dictionary"""
-
-        with open('db_creds.yaml', 'r') as file:
-            db_creds = yaml.safe_load(file)
+    def __init__(self):
+        self.db_creds = self.read_db_creds()
+        self.engine = self.init_db_engine()
         
+    def read_db_creds(self):
+        with open('db_creds.yaml') as f:
+            db_creds = yaml.safe_load(f)
         return db_creds
 
-    def init_db_engine():
-
-        db_creds = db_con.read_db_creds()
-        db_url = f"postgresql://{db_creds['RDS_USER']}:{db_creds['RDS_PASSWORD']}@{db_creds['RDS_HOST']}:{db_creds['RDS_PORT']}/{db_creds['RDS_DATABASE']}"
-        engine = create_engine(db_url)
-
+    def init_db_engine(self):
+        engine = create_engine(f"postgresql://{self.db_creds['RDS_USER']}:{self.db_creds['RDS_PASSWORD']}@{self.db_creds['RDS_HOST']}:{self.db_creds['RDS_PORT']}/{self.db_creds['RDS_DATABASE']}")
         return engine
+    
+    def list_db_tables(self):
+        inspector = inspect(self.engine)
+        return inspector.get_table_names()
 
-    # def list_db_tables():
-        
-"""                     Now create a method init_db_engine which will read the 
-                        credentials from the return of read_db_creds and 
-                        initialise and return an sqlalchemy database engine."""
+    def upload_to_db(self, df, table_name):
+        try:
+            # Convert DataFrame to a list of tuples
+            data_tuples = [tuple(row) for row in df.to_records(index=False)]
 
+            print(data_tuples[:5])  # Print the first 5 tuples
 
-db_con = DatabaseConnector
-db_con.init_db_engine()
+            # Create an INSERT query
+            insert_query = f"""
+                INSERT INTO {table_name} (first_name, last_name, date_of_birth, company, email_address,
+                                        address, country, country_code, phone_number, join_date, user_uuid)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+            """
 
+            # Execute the INSERT query for each tuple
+            with self.engine.begin() as connection:
+                connection.execute(insert_query, data_tuples)
+
+            print(f"Data successfully uploaded to the '{table_name}' table.")
+        except exc.SQLAlchemyError as e:
+            print(f"Error uploading data to '{table_name}': {e}")

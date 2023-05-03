@@ -1,28 +1,25 @@
 import pandas as pd
-import re
 
 class DataCleaning:
-
     @staticmethod
-    def clean_user_data(user_df):
-        # Clean date columns
+    def clean_user_data(df):
+        # Replace non-alphabetical characters in specific columns
+        columns_to_clean = ['first_name', 'last_name']
+        for col in columns_to_clean:
+            df[col] = df[col].str.replace('[^a-zA-Z]', '')
+
+        # Standardize phone numbers
+        phone_number_columns = ['phone_number']
+        for col in phone_number_columns:
+            df[col] = df[col].str.replace('[^0-9]', '')
+            df[col] = df[col].apply(lambda x: f"{x[:3]}-{x[3:6]}-{x[6:]}")
+
+        # Parse and reformat dates
         date_columns = ['date_of_birth', 'join_date']
-        for date_col in date_columns:
-            user_df[date_col] = pd.to_datetime(user_df[date_col], errors='coerce')
+        for col in date_columns:
+            df[col] = pd.to_datetime(df[col], errors='coerce')
+            df[col] = df[col].dt.strftime('%Y-%m-%d')
 
-        # Clean names
-        name_columns = ['first_name', 'last_name']
-        for name_col in name_columns:
-            user_df[name_col] = user_df[name_col].str.replace('[^a-zA-Z\s]', '', regex=True)
+        # Handle any other cleaning tasks here...
 
-        # Clean phone numbers
-        def clean_phone_number(phone):
-            return re.sub(r'[^\d\+]', '', phone)
-
-        user_df['phone_number'] = user_df['phone_number'].apply(clean_phone_number)
-
-        # Drop rows with NULL values or empty strings
-        user_df.dropna(inplace=True)
-        user_df.replace('', pd.NA, inplace=True)
-
-        return user_df
+        return df

@@ -3,7 +3,12 @@ from data_extraction import DataExtractor
 from data_cleaning import DataCleaning
 
 db_connector = DatabaseConnector()
-table_names = db_connector.list_db_tables()
+
+# Create the database engine
+engine = db_connector.init_db_engine()
+
+# Pass the engine to the list_db_tables method
+table_names = db_connector.list_db_tables(engine)
 
 # Print the list of table names and manually identify the user data table
 print("List of tables in the database:")

@@ -28,3 +28,13 @@ cleaned_user_data_df = DataCleaning.clean_user_data(raw_user_data_df)
 
 # Upload the cleaned user data to the sales_data database
 db_connector.upload_to_db(cleaned_user_data_df, 'dim_users')
+
+# TASK 4
+data_extractor = DataExtractor()
+link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
+raw_card_data_df = data_extractor.retrieve_pdf_data(link)
+
+data_cleaning = DataCleaning()
+clean_card_data_df = data_cleaning.clean_card_data(raw_card_data_df)
+
+db_connector.upload_to_db(clean_card_data_df, 'dim_card_details')

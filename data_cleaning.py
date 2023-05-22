@@ -18,7 +18,15 @@ class DataCleaning:
         for col in columns_to_clean:
             df[col] = df[col].str.replace('[^a-zA-Z]', '')
         return df
-
+    
+    def clean_card_data(self, df):
+        # Clean the data here
+        # This might involve removing null values, fixing formatting, etc.
+        # For example, to remove rows with any null values, you can use:
+        # -------- df = df.dropna(how='any')
+        
+        return df
+    
     @staticmethod
     def clean_phone_numbers(df):
         def clean_number(row):

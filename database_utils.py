@@ -50,3 +50,7 @@ class DatabaseConnector:
 
             # Upload the DataFrame to the database
             df.to_sql(table_name, conn, if_exists='replace', index=False)
+
+    def get_table_schema(self, engine, table_name):
+        inspector = inspect(engine)
+        return inspector.get_columns(table_name)

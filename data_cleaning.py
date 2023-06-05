@@ -3,6 +3,7 @@ import pandas as pd
 from dateutil.parser import parse, ParserError
 import re
 import phonenumbers
+from pandas.api.types import is_numeric_dtype
 
 class DataCleaning:
     @staticmethod
@@ -20,11 +21,28 @@ class DataCleaning:
         return df
     
     def clean_card_data(self, df):
-        # Clean the data here
-        # This might involve removing null values, fixing formatting, etc.
-        # For example, to remove rows with any null values, you can use:
-        # -------- df = df.dropna(how='any')
-        
+        df = df.copy()  # Add this line to make a copy of the DataFrame
+
+        # Define the list of known card providers
+        known_providers = ['Diners Club / Carte Blanche', 'American Express', 'JCB 16 digit', 'JCB 15 digit', 
+                           'Maestro', 'Mastercard', 'Discover', 'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
+
+        # Remove card_number with invalid length
+        df = df[df['card_number'].apply(lambda x: 13 <= len(str(x).replace('.0', '')) <= 19)]
+
+        # Convert expiry_date to datetime and remove invalid dates
+        df['expiry_date'] = pd.to_datetime(df['expiry_date'], format='%m/%y', errors='coerce')
+        df = df[df['expiry_date'].notna()]
+        df = df[df['expiry_date'] > pd.to_datetime('today')]
+
+        # Keep only known card providers
+        df = df[df['card_provider'].isin(known_providers)]
+
+        # Convert date_payment_confirmed to datetime and remove invalid dates
+        df['date_payment_confirmed'] = pd.to_datetime(df['date_payment_confirmed'], errors='coerce')
+        df = df[df['date_payment_confirmed'].notna()]
+        df = df[df['date_payment_confirmed'] < pd.to_datetime('today')]
+
         return df
     
     @staticmethod
@@ -113,3 +131,98 @@ class DataCleaning:
         
         return df
 
+
+    @staticmethod
+    def clean_store_data(df):
+        # 1. Removing `lat` column and moving `latitude` next to `longitude`
+        df = df.drop(columns=['lat'])
+        cols = df.columns.tolist()
+        cols.insert(cols.index('longitude') + 1, cols.pop(cols.index('latitude')))
+        df = df[cols]
+        
+        # 2. Correcting the encoding issue with the `address` column
+        df['address'] = df['address'].str.encode('latin1').str.decode('utf-8', 'ignore')
+        
+        # 3. Formatting the `opening_date` column
+        df['opening_date'] = pd.to_datetime(df['opening_date'], errors='coerce')
+        
+        # 4. Removing rows with totally invalid or all null data
+        df = df.dropna(how='all')  # drop rows with all null values
+        df = df[~df.applymap(lambda x: len(str(x)) < 2 and not str(x).isnumeric()).all(axis=1)]  # drop rows with invalid data
+        
+        # 5. Correcting 'eeEurope' to 'Europe' in the `continent` column
+        df['continent'] = df['continent'].replace('eeEurope', 'Europe')
+        
+        # 6. Cleaning the `staff_numbers` column
+        df['staff_numbers'] = df['staff_numbers'].replace({'J': '1', 'e': '3'}, regex=True)
+        df['staff_numbers'] = pd.to_numeric(df['staff_numbers'], errors='coerce').astype(pd.Int64Dtype())
+        
+        numeric_cols = ['longitude', 'latitude']  # add any other numeric columns that need cleaning
+        nan_threshold = 3
+        df = DataCleaning.clean_invalid_data(df, numeric_cols, nan_threshold)
+        
+        return df
+    
+    @staticmethod
+    def clean_invalid_data(df, numeric_cols, nan_threshold):
+        for col in numeric_cols:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        df = df[df.isnull().sum(axis=1) <= nan_threshold]
+        return df
+
+
+    @staticmethod
+    def clean_products_data(df):
+        def convert_product_weights(df):
+            def to_kg(weight):
+                if isinstance(weight, float):
+                    return weight  # It's already a float, no conversion needed
+                elif 'kg' in weight:
+                    numeric_weight = float(re.sub('[^0-9.]', '', weight))
+                elif 'g' in weight:
+                    numeric_weight = float(re.sub('[^0-9.]', '', weight)) / 1000  # Convert grams to kg
+                elif 'x' in weight:
+                    quantity, unit_weight = weight.split(' x ')
+                    if 'g' in unit_weight:
+                        numeric_weight = float(quantity) * (float(re.sub('[^0-9.]', '', unit_weight)) / 1000)  # Convert grams to kg
+                    else:
+                        numeric_weight = float(quantity) * float(re.sub('[^0-9.]', '', unit_weight))  # If kg, no need to convert
+                else:
+                    numeric_weight = None  # Handle edge cases that might have been missed
+
+                return numeric_weight
+
+            df['weight'] = df['weight'].apply(to_kg)
+            return df
+        df = convert_product_weights(df)
+
+        # Format 'date_added' column
+        def parse_dates(date):
+            try:
+                return parse(date).date()
+            except:
+                return None
+
+        df['date_added'] = df['date_added'].apply(parse_dates)
+
+        # Remove the first column
+        df = df.drop(df.columns[[0]], axis=1)
+
+        # Set any 'category' cell to null if it contains numbers
+        df.loc[df['category'].str.contains('\d', na=False), 'category'] = None
+
+        # Corrects spelling mistake in 'removed' column ('still_avaliable' to 'still_available')
+        df['removed'] = df['removed'].str.replace('Still_avaliable', 'Still_available', regex=False)
+
+        # Ensure 'removed' column contains only 'Removed' or 'Still_available', if not, set it to null
+        df.loc[~df['removed'].isin(['Removed', 'Still_available']), 'removed'] = None
+
+        # Make sure 'product_price' contains only valid format like '£10.99', if not, set it to null
+        df.loc[df['product_price'].str.contains('[a-zA-Z]', na=False), 'product_price'] = None
+
+        # Remove rows where more than half of the cells are null
+        half_len = len(df.columns) / 2
+        df = df.dropna(thresh=half_len)
+        
+        return df

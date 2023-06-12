@@ -113,3 +113,32 @@ class DataCleaning:
             return parse(date_str).strftime('%Y-%m-%d') if isinstance(date_str, str) else np.nan
         except ParserError:
             return np.nan
+        
+    @staticmethod
+    def clean_orders_data(df):
+        """Cleans the orders table data."""
+        # Remove unnecessary columns
+        columns_to_drop = ["first_name", "last_name", "1"]
+        df = df.drop(columns=columns_to_drop, errors="ignore")
+        return df
+    
+    @staticmethod
+    def clean_date_times_data(df):
+        """Cleans the date_times table data."""
+        # Drop the first column if it is unnamed
+        if 'Unnamed: 0' in df.columns:
+            df = df.drop('Unnamed: 0', axis=1)
+        # Making null any cells that contain letters, or that are empty
+        df['timestamp'] = pd.to_datetime(df['timestamp'], format='%H:%M:%S', errors='coerce')
+        df['month'] = pd.to_numeric(df['month'], errors='coerce')
+        df['year'] = pd.to_numeric(df['year'], errors='coerce')
+        df['day'] = pd.to_numeric(df['day'], errors='coerce')
+        # Retaining only the valid 'time_period' values
+        valid_time_periods = ['Morning', 'Midday', 'Evening', 'Late_Hours']
+        df['time_period'] = df['time_period'].where(df['time_period'].isin(valid_time_periods))
+        # Convert the datetime to just time
+        df['timestamp'] = df['timestamp'].dt.time
+        # drop rows where more than half of the cells are null
+        df = df.dropna(thresh=df.shape[1] // 2 + 1)
+
+        return df

@@ -40,3 +40,14 @@ raw_product_data_df = DataExtractor.extract_from_s3(s3_address)
 clean_product_data_df = DataCleaning.clean_products_data(raw_product_data_df)
 db_connector.upload_to_db(clean_product_data_df, 'dim_products')
 
+# Extract and clean the orders data
+orders_data_table = 'orders_table'
+raw_orders_data_df = DataExtractor.read_rds_table(db_connector, orders_data_table)
+clean_orders_data_df = DataCleaning.clean_orders_data(raw_orders_data_df)
+db_connector.upload_to_db(clean_orders_data_df, 'orders_table')
+
+# Extract and clean the date times data
+json_url = "https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json"
+raw_date_times_data_df = data_extractor.extract_from_json_url(json_url)
+clean_date_times_data_df = data_cleaning.clean_date_times_data(raw_date_times_data_df)
+db_connector.upload_to_db(clean_date_times_data_df, 'dim_date_times')

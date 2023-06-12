@@ -92,3 +92,17 @@ class DataExtractor:
         csv_obj = s3.get_object(Bucket=bucket_name, Key=key)
         body = csv_obj['Body'].read().decode('utf-8')
         return pd.read_csv(StringIO(body))
+
+    def extract_from_json_url(self, json_url):
+        """
+        Extracts JSON data from a URL and converts it to a DataFrame.
+
+        Args:
+            json_url (str): The URL of the JSON data.
+
+        Returns:
+            DataFrame: The JSON data as a DataFrame.
+        """
+        data = requests.get(json_url).json()
+        df = pd.DataFrame(data)
+        return df

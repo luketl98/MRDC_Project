@@ -6,23 +6,32 @@ import phonenumbers
 
 class DataCleaning:
     @staticmethod
+    def is_valid_uuid(val):
+        regex = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\Z', re.I)
+        match = regex.match(val)
+        return bool(match)
+
+    @staticmethod
     def clean_user_data(df):
-        return df.pipe(DataCleaning.clean_alphabetical_columns).pipe(DataCleaning.clean_phone_numbers).pipe(DataCleaning.clean_dates)
+        df = (df.pipe(DataCleaning.clean_alphabetical_columns)
+                .pipe(DataCleaning.clean_phone_numbers)
+                .pipe(DataCleaning.clean_dates)
+                .pipe(DataCleaning.clean_country_codes)) 
+        df = df[df['user_uuid'].apply(DataCleaning.is_valid_uuid)]
+        return df
 
     @staticmethod
     def clean_alphabetical_columns(df):
         df[['first_name', 'last_name']] = df[['first_name', 'last_name']].applymap(lambda x: re.sub('[^a-zA-Z]', '', x))
         return df
-
+    
     def clean_card_data(self, df):
         known_providers = ['Diners Club / Carte Blanche', 'American Express', 'JCB 16 digit', 'JCB 15 digit', 'Maestro', 'Mastercard', 'Discover', 'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
-
         df = df[df['card_number'].str.len().between(13, 19, inclusive='both')]
-        df.loc[:, 'expiry_date'] = pd.to_datetime(df['expiry_date'], format='%m/%y', errors='coerce')
-        df = df.loc[df['expiry_date'].notna() & (df['expiry_date'] > pd.to_datetime('today')) & df['card_provider'].isin(known_providers)]
-        df['date_payment_confirmed'] = pd.to_datetime(df['date_payment_confirmed'], errors='coerce')
-        df = df.loc[df['date_payment_confirmed'].notna() & (df['date_payment_confirmed'] < pd.to_datetime('today'))]
-
+        df.loc[:, 'expiry_date'] = pd.to_datetime(df['expiry_date'], format='%m/%y', errors='coerce').dt.date
+        df = df.loc[df['expiry_date'].notna() & (df['expiry_date'] > pd.to_datetime('today').date()) & df['card_provider'].isin(known_providers)]
+        df['date_payment_confirmed'] = pd.to_datetime(df['date_payment_confirmed'], errors='coerce').dt.date
+        df = df.loc[df['date_payment_confirmed'].notna() & (df['date_payment_confirmed'] < pd.to_datetime('today').date())]
         return df
 
     @staticmethod
@@ -56,7 +65,6 @@ class DataCleaning:
                 return parse(date_str).strftime('%Y-%m-%d') if isinstance(date_str, str) else np.nan
             except ParserError:
                 return np.nan
-
         df[['date_of_birth', 'join_date']] = df[['date_of_birth', 'join_date']].applymap(parse_date)
         return df
 
@@ -64,18 +72,16 @@ class DataCleaning:
     def clean_store_data(df):
         df.drop(columns=['lat'], inplace=True)
         df['address'] = df['address'].str.encode('latin1').str.decode('utf-8', 'ignore')
-        df['opening_date'] = pd.to_datetime(df['opening_date'], errors='coerce')
+        df['opening_date'] = pd.to_datetime(df['opening_date'], errors='coerce').dt.date
         df.dropna(how='all', inplace=True)
-        df = df[~df.applymap(lambda x: len(str(x)) < 2 and not str(x).isnumeric()).all(axis=1)]
         df.replace({'continent': {'eeEurope': 'Europe'}, 'staff_numbers': {'J': '1', 'e': '3'}}, inplace=True)
         df['staff_numbers'] = pd.to_numeric(df['staff_numbers'], errors='coerce').astype(pd.Int64Dtype())
-
-        return DataCleaning.clean_invalid_data(df, ['longitude', 'latitude'], 3)
+        return DataCleaning.clean_invalid_data(df)
 
     @staticmethod
-    def clean_invalid_data(df, numeric_cols, nan_threshold):
-        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
-        return df[df.isnull().sum(axis=1) <= nan_threshold]
+    def clean_invalid_data(df):
+        threshold = len(df.columns) / 2
+        return df.dropna(thresh=threshold)
 
     @staticmethod
     def clean_products_data(df):
@@ -86,11 +92,7 @@ class DataCleaning:
         df.replace({'removed': {'Still_avaliable': 'Still_available'}}, inplace=True)
         df.loc[~df['removed'].isin(['Removed', 'Still_available']), 'removed'] = None
         df.loc[df['product_price'].str.contains('[a-zA-Z]', na=False), 'product_price'] = None
-        # Remove rows where more than half of the cells are null
-        half_len = len(df.columns) / 2
-        df = df.dropna(thresh=half_len)
-
-        return df
+        return DataCleaning.clean_invalid_data(df)
 
     @staticmethod
     def convert_product_weights(weight):
@@ -116,15 +118,13 @@ class DataCleaning:
         
     @staticmethod
     def clean_orders_data(df):
-        """Cleans the orders table data."""
         # Remove unnecessary columns
-        columns_to_drop = ["first_name", "last_name", "1"]
+        columns_to_drop = ["first_name", "last_name", "1", "level_0"]
         df = df.drop(columns=columns_to_drop, errors="ignore")
         return df
-    
+
     @staticmethod
     def clean_date_times_data(df):
-        """Cleans the date_times table data."""
         # Drop the first column if it is unnamed
         if 'Unnamed: 0' in df.columns:
             df = df.drop('Unnamed: 0', axis=1)
@@ -138,7 +138,14 @@ class DataCleaning:
         df['time_period'] = df['time_period'].where(df['time_period'].isin(valid_time_periods))
         # Convert the datetime to just time
         df['timestamp'] = df['timestamp'].dt.time
-        # drop rows where more than half of the cells are null
-        df = df.dropna(thresh=df.shape[1] // 2 + 1)
-
+        return DataCleaning.clean_invalid_data(df)
+    
+    @staticmethod
+    def clean_country_codes(df):
+        # Convert to upper case and trim spaces if any
+        df['country_code'] = df['country_code'].str.upper().str.strip()
+        # Replace 'GGB' with 'GB'
+        df.loc[df['country_code'] == 'GGB', 'country_code'] = 'GB'
+        # Set to null if country_code isn't 'US', 'GB', or 'DE'
+        df.loc[~df['country_code'].isin(['US', 'GB', 'DE']), 'country_code'] = None
         return df

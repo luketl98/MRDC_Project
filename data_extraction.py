@@ -62,11 +62,12 @@ class DataExtractor:
             DataFrame with the data about the stores. Returns None if no data could be retrieved.
         """
         data = []
-        for i in range(1, num_stores + 1):
+        for i in range(num_stores):
             try:
                 response = requests.get(f"{endpoint}/{i}", headers=self.header)
                 if response.status_code == 200:
                     data.append(response.json())
+
 
             except Exception as e:
                 print(f"There was an error: {e}")

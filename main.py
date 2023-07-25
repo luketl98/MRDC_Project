@@ -1,6 +1,7 @@
 from database_utils import DatabaseConnector
 from data_extraction import DataExtractor
 from data_cleaning import DataCleaning
+from sqlalchemy import text
 
 # Instantiate DatabaseConnector and DataExtractor with necessary parameters
 db_connector = DatabaseConnector()
@@ -54,7 +55,22 @@ raw_date_times_data_df = data_extractor.extract_from_json_url(json_url)
 clean_date_times_data_df = data_cleaning.clean_date_times_data(raw_date_times_data_df)
 db_connector.upload_to_db(clean_date_times_data_df, 'dim_date_times')
 
+# Read the SQL file
+with open('cast_data_types.sql', 'r') as file:
+    sql_commands = file.read().split(';')
+
+# Execute each SQL command
+for command in sql_commands:
+    if command.strip() != "":
+        with engine.connect() as connection:
+            connection.execute(text(command))
+
+# Close the engine
 engine.dispose()
+
+# Close all connections
+# connection.close()
+
 """
 so instead of the engine connect close line you can have
 

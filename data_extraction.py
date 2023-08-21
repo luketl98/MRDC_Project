@@ -21,8 +21,8 @@ class DataExtractor:
         Returns:
             DataFrame with the content of the table.
         """
-        engine = database_connector.init_db_engine()
-        return pd.read_sql_table(table_name, engine)
+        
+        return pd.read_sql_table(table_name, database_connector.engine)
 
     def retrieve_pdf_data(self, link):
         """

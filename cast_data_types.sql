@@ -18,11 +18,11 @@ ALTER COLUMN country_code TYPE VARCHAR(2) USING country_code::varchar,
 ALTER COLUMN user_uuid TYPE UUID USING user_uuid::uuid,
 ALTER COLUMN join_date TYPE DATE USING join_date::date;
 
--- Task 3: dim_store_details data type conversion
+-- Task 3 (part 2): dim_store_details - data type conversion
 ALTER TABLE dim_store_details
 ALTER COLUMN longitude TYPE float USING (longitude::float),
 ALTER COLUMN locality TYPE VARCHAR(255) USING locality::varchar,
-ALTER COLUMN store_code TYPE VARCHAR(11) USING store_code::varchar,
+ALTER COLUMN store_code TYPE VARCHAR(12) USING store_code::varchar,
 ALTER COLUMN staff_numbers TYPE SMALLINT USING staff_numbers::smallint,
 ALTER COLUMN opening_date TYPE DATE USING opening_date::date,
 ALTER COLUMN store_type TYPE VARCHAR(255) USING store_type::varchar,
@@ -30,11 +30,13 @@ ALTER COLUMN latitude TYPE float USING (latitude::float),
 ALTER COLUMN country_code TYPE VARCHAR(2) USING country_code::varchar,
 ALTER COLUMN continent TYPE VARCHAR(255) USING continent::varchar;
 
--- Task 3 (continued) : Change Web Store row value from null to N/A
-UPDATE dim_store_details SET latitude = 'N/A' WHERE store_type = 'Web Portal';
+-- Task 3 (part 1) : dim_store_details - Change Web Store row value from null to N/A
+-- UPDATE dim_store_details SET latitude = 'N/A', longitude = 'N/A' WHERE store_type = 'Web Portal';
+
 
 -- Task 4: dim_products extra cleaning and add new column 'weight_class'
-UPDATE dim_products SET product_price = REPLACE(product_price, '£', '')::FLOAT;
+ALTER TABLE dim_products
+ALTER COLUMN product_price TYPE float USING (REPLACE(product_price, '£', '')::float);
 ALTER TABLE dim_products ADD COLUMN weight_class VARCHAR;
 UPDATE dim_products SET weight_class = 
     CASE 
@@ -46,7 +48,9 @@ UPDATE dim_products SET weight_class =
 
 -- Task 5: dim_products data type conversion and rename column 'removed' to 'still_available'
 ALTER TABLE dim_products
-RENAME COLUMN removed TO still_available,
+RENAME COLUMN removed TO still_available;
+
+ALTER TABLE dim_products
 ALTER COLUMN product_price TYPE FLOAT USING product_price::FLOAT,
 ALTER COLUMN weight TYPE FLOAT USING weight::FLOAT,
 ALTER COLUMN "EAN" TYPE VARCHAR(17),
@@ -59,6 +63,7 @@ ALTER COLUMN still_available TYPE BOOL USING
     WHEN still_available='Removed' THEN FALSE
     END,
 ALTER COLUMN weight_class TYPE VARCHAR(14);
+
 
 -- Task 6: dim_date_times data type conversion
 ALTER TABLE dim_date_times

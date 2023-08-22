@@ -29,12 +29,8 @@ class DatabaseConnector:
         Initialize the database engine using either local or remote credentials.
         """
         print(credentials['DB_HOST'])
-        db_url = f"postgresql://\
-            {credentials['DB_USER']}:\
-            {credentials['DB_PASSWORD']}@\
-            {credentials['DB_HOST']}:\
-            {credentials['DB_PORT']}/\
-            {credentials['DB_DATABASE']}"
+        
+        db_url = f"postgresql://{credentials['DB_USER']}:{credentials['DB_PASSWORD']}@{credentials['DB_HOST']}:{credentials['DB_PORT']}/{credentials['DB_DATABASE']}"
 
         return create_engine(db_url)
 

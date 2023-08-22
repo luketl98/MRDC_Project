@@ -18,13 +18,14 @@ data_cleaning = DataCleaning()
 
 # dim_users : Extract and clean user data, then upload to database
 user_data_table = 'legacy_users'
-"""if user_data_table in db_connector.list_db_tables():
+
+if user_data_table in db_connector.list_db_tables():
     raw_user_data_df = DataExtractor.read_rds_table(db_connector, user_data_table)
     cleaned_user_data_df = DataCleaning.clean_user_data(raw_user_data_df)
     local_db_connector.upload_to_db(cleaned_user_data_df, 'dim_users')
 else:
     print(f"User data table '{user_data_table}' not found")
-"""
+
 # dim_card_details : Extract, clean and upload card data from PDF
 link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
 raw_card_data_df = data_extractor.retrieve_pdf_data(link)
@@ -57,7 +58,7 @@ raw_date_times_data_df = data_extractor.extract_from_json_url(json_url)
 clean_date_times_data_df = data_cleaning.clean_date_times_data(raw_date_times_data_df)
 local_db_connector.upload_to_db(clean_date_times_data_df, 'dim_date_times')
 
-"""
+
 # Read the SQL file
 with open('cast_data_types.sql', 'r') as file:
     sql_file_content = file.read()
@@ -66,7 +67,7 @@ with open('cast_data_types.sql', 'r') as file:
 sql_commands = sql_file_content.split('ALTER TABLE')
 
 # Execute each SQL command individually
-with db_connector.engine.connect() as connection:
+with local_db_connector.engine.connect() as connection:
     for sql_command in sql_commands[1:]:  # Skip the first split, as it's empty
         # Prepend 'ALTER TABLE' to the command and remove leading/trailing whitespaces
         sql_command = 'ALTER TABLE ' + sql_command.strip()  # Notice the space after 'ALTER TABLE '
@@ -76,12 +77,12 @@ with db_connector.engine.connect() as connection:
 
 
 # Close the engine
-self.engine.dispose()
+# self.engine.dispose()
 
 # Close all connections
 
 # connection.close()
-"""
+
 
 """
 so instead of the engine connect close line you can have

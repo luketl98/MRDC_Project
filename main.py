@@ -1,11 +1,30 @@
 from database_utils import DatabaseConnector
 from data_extraction import DataExtractor
 from data_cleaning import DataCleaning
-from sqlalchemy import text
+from sqlalchemy import text, create_engine
+
+# New function to reset the database schema
+def reset_database_schema(engine):
+    with engine.begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS orders_table CASCADE;"))
+        conn.execute(text("DROP TABLE IF EXISTS dim_users CASCADE;"))
+        conn.execute(text("DROP TABLE IF EXISTS dim_card_details CASCADE;"))
+        conn.execute(text("DROP TABLE IF EXISTS dim_store_details CASCADE;"))
+        conn.execute(text("DROP TABLE IF EXISTS dim_products CASCADE;"))
+        conn.execute(text("DROP TABLE IF EXISTS dim_date_times CASCADE;"))
 
 # Instantiate DatabaseConnector and DataExtractor with necessary parameters
 db_connector = DatabaseConnector('db_creds.yaml')
 local_db_connector = DatabaseConnector('local_creds.yaml')
+
+# Initialize SQLAlchemy engine for schema reset
+engine = local_db_connector.engine
+
+# New user prompt for schema reset
+reset_choice = input("Do you want to reset the database schema? (yes/no): ")
+if reset_choice.lower() == 'yes':
+    reset_database_schema(engine)
+
 
 header = {"x-api-key": "yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX"}
 data_extractor = DataExtractor(header)
@@ -29,6 +48,7 @@ else:
 # dim_card_details : Extract, clean and upload card data from PDF
 link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
 raw_card_data_df = data_extractor.retrieve_pdf_data(link)
+raw_card_data_df_to_csv = raw_card_data_df.to_csv('raw_card_data.csv')
 clean_card_data_df = DataCleaning.clean_card_data(raw_card_data_df)
 local_db_connector.upload_to_db(clean_card_data_df, 'dim_card_details')
 
@@ -49,6 +69,7 @@ local_db_connector.upload_to_db(clean_product_data_df, 'dim_products')
 # orders_table : Extract and clean the orders data
 orders_data_table = 'orders_table'
 raw_orders_data_df = DataExtractor.read_rds_table(db_connector, orders_data_table)
+raw_orders_data_df_to_csv = raw_orders_data_df.to_csv('raw_orders_data.csv')
 clean_orders_data_df = DataCleaning.clean_orders_data(raw_orders_data_df)
 local_db_connector.upload_to_db(clean_orders_data_df, 'orders_table')
 
@@ -59,21 +80,28 @@ clean_date_times_data_df = data_cleaning.clean_date_times_data(raw_date_times_da
 local_db_connector.upload_to_db(clean_date_times_data_df, 'dim_date_times')
 
 
+# SQL file logic ------------------------------
+
 # Read the SQL file
 with open('cast_data_types.sql', 'r') as file:
     sql_file_content = file.read()
 
-# Split the SQL file content by 'ALTER TABLE'
-sql_commands = sql_file_content.split('ALTER TABLE')
+# Split the SQL file content by ';'
+raw_sql_commands = [command.strip() for command in sql_file_content.split(';') if command.strip()]
+
+# Filter out commands that are entirely comments
+sql_commands = [command for command in raw_sql_commands if any(not line.strip().startswith("--") for line in command.split("\n"))]
 
 # Execute each SQL command individually
 with local_db_connector.engine.connect() as connection:
-    for sql_command in sql_commands[1:]:  # Skip the first split, as it's empty
-        # Prepend 'ALTER TABLE' to the command and remove leading/trailing whitespaces
-        sql_command = 'ALTER TABLE ' + sql_command.strip()  # Notice the space after 'ALTER TABLE '
-        
-        # Execute the command
-        connection.execute(text(sql_command))
+    for sql_command in sql_commands:
+        try:
+            connection.execute(text(sql_command))
+            print(f"Executed SQL command:\n{sql_command}\n{'-'*50}")
+        except Exception as e:  # Catch any general exception
+            print(f"Error executing SQL command:\n{sql_command}\nError message: {e}\n{'-'*50}")
+    connection.commit()
+
 
 
 # Close the engine

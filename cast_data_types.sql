@@ -86,6 +86,14 @@ ALTER TABLE dim_products ADD PRIMARY KEY (product_code);
 ALTER TABLE dim_date_times ADD PRIMARY KEY (date_uuid);
 ALTER TABLE dim_card_details ADD PRIMARY KEY (card_number);
 
+-- pre-task 9: resolving issues with the foreign key (card_number)
+-- Delete rows from orders_table with card_number values not found in dim_card_details
+DELETE FROM orders_table
+WHERE card_number NOT IN (SELECT card_number FROM dim_card_details);
+-- Delete rows from dim_card_details with card_number values not found in orders_table
+DELETE FROM dim_card_details
+WHERE card_number NOT IN (SELECT card_number FROM orders_table);
+
 -- Task 9: Finalising the star-based schema & adding the foreign keys to the orders_table
 ALTER TABLE orders_table
 ADD FOREIGN KEY (user_uuid) REFERENCES dim_users(user_uuid),

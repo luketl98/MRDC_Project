@@ -72,6 +72,10 @@ class DataCleaning:
     def clean_orders_data(df):
         # Remove unnecessary columns
         columns_to_drop = ["first_name", "last_name", "1", "level_0"]
+        # Calculate the number of digits for each card_number
+        num_digits = np.floor(np.log10(df['card_number'])) + 1
+        # Filter the rows based on the number of digits
+        df = df[num_digits.between(13, 19, inclusive='both')]
         df = df.drop(columns=columns_to_drop, errors="ignore")
         return DataCleaning.clean_invalid_data(df)
 

@@ -11,7 +11,7 @@ class DataCleaning:
     staticmethod
     def clean_card_data(df):
         known_providers = ['Diners Club / Carte Blanche', 'American Express', 'JCB 16 digit', 'JCB 15 digit', 'Maestro', 'Mastercard', 'Discover', 'VISA 19 digit', 'VISA 16 digit', 'VISA 13 digit']
-        df = df[df['card_number'].str.len().between(13, 19, inclusive='both')]
+        # df = df[df['card_number'].str.len().between(13, 19, inclusive='both')]
         df.loc[:, 'expir@y_date'] = pd.to_datetime(df['expiry_date'], format='%m/%y', errors='coerce').dt.date
         df = df[df['card_provider'].isin(known_providers)]
         df['date_payment_confirmed'] = pd.to_datetime(df['date_payment_confirmed'], errors='coerce').dt.date
@@ -43,7 +43,19 @@ class DataCleaning:
         df.loc[df['category'].str.contains('\d', na=False), 'category'] = None
         df.replace({'removed': {'Still_avaliable': 'Still_available'}}, inplace=True)
         df.loc[~df['removed'].isin(['Removed', 'Still_available']), 'removed'] = None
+        # Delete -------------------
+        # Print or save rows where 'product_price' contains alphabetic characters
+        affected_rows_before = df[df['product_price'].str.contains('[a-zA-Z]', na=False)]
+        print("Affected rows before cleaning:")
+        print(affected_rows_before)
+        # --------------------------
         df.loc[df['product_price'].str.contains('[a-zA-Z]', na=False), 'product_price'] = None
+        # Delete -------------------
+        # Print or save rows where 'product_price' is now None
+        affected_rows_after = df[df['product_price'].isnull()]
+        print("Affected rows after cleaning:")
+        print(affected_rows_after)
+        # --------------------------
         return DataCleaning.clean_invalid_data(df)
 
     @staticmethod
@@ -73,9 +85,9 @@ class DataCleaning:
         # Remove unnecessary columns
         columns_to_drop = ["first_name", "last_name", "1", "level_0"]
         # Calculate the number of digits for each card_number
-        num_digits = np.floor(np.log10(df['card_number'])) + 1
+        # delete - num_digits = np.floor(np.log10(df['card_number'])) + 1
         # Filter the rows based on the number of digits
-        df = df[num_digits.between(13, 19, inclusive='both')]
+        # delete - df = df[num_digits.between(13, 19, inclusive='both')]
         df = df.drop(columns=columns_to_drop, errors="ignore")
         return DataCleaning.clean_invalid_data(df)
 

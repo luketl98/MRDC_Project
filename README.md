@@ -10,8 +10,8 @@
 
 ## Project Description
 
-MRDC aims to centralize retail data from multiple sources into a single, clean, and easily queryable database. 
-The project utilizes Python for data extraction, cleaning, and uploading to a PostgreSQL database managed through pgAdmin 4.
+MRDC aims to centralise retail data from multiple sources into a single, clean, and easily queryable database. 
+The project utilises Python for data extraction, cleaning, and uploading to a PostgreSQL database managed through pgAdmin 4.
 
 ### What It Does
 - Extracts data from various sources (CSV, APIs, databases, etc.)

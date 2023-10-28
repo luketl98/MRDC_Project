@@ -38,9 +38,10 @@ The project utilises Python for data extraction, cleaning, and uploading to a Po
 
 ## Usage
 
-1. Update `config.py` with your database credentials.
-2. Run `main.py` to start the ETL process: `python main.py`
-3. Open pgAdmin 4 to query the database.
+1. Update `local_creds.yaml` with your local system credentials.
+2. Update `db_creds.yaml` with your database credentials.
+3. Run `main.py` to start the ETL process: 'python main.py'
+4. Open pgAdmin 4 to query the database.
 
 ## File Structure
 

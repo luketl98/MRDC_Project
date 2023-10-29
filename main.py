@@ -1,10 +1,18 @@
-from database_utils import DatabaseConnector
-from data_extraction import DataExtractor
-from data_cleaning import DataCleaning
-from sqlalchemy import text, create_engine
+from database_utils import DatabaseConnector  # Importing database connection utility from database_utils.py
+from data_extraction import DataExtractor  # Importing data extraction utility from data_extraction.py
+from data_cleaning import DataCleaning  # Importing data cleaning utility from data_cleaning.py
+from sqlalchemy import text, create_engine  # Importing text and create_engine from SQLAlchemy for database interactions
 
 # New function to reset the database schema
 def reset_database_schema(engine):
+    """
+    Resets the database schema by dropping existing tables.
+    This ensures that the database is in a clean state before new operations.
+    
+    Parameters:
+        engine: SQLAlchemy engine object
+            The database engine to execute the commands.
+    """
     with engine.begin() as conn:
         conn.execute(text("DROP TABLE IF EXISTS orders_table CASCADE;"))
         conn.execute(text("DROP TABLE IF EXISTS dim_users CASCADE;"))
@@ -30,10 +38,6 @@ header = {"x-api-key": "yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX"}
 data_extractor = DataExtractor(header)
 data_cleaning = DataCleaning()
 
-# Initialize database engine
-
-
-####################
 
 # dim_users : Extract and clean user data, then upload to database
 user_data_table = 'legacy_users'
@@ -103,23 +107,9 @@ with local_db_connector.engine.connect() as connection:
     connection.commit()
 
 
-
 # Close the engine
 # self.engine.dispose()
 
 # Close all connections
 
 # connection.close()
-
-
-"""
-so instead of the engine connect close line you can have
-
-Close the engine
-
-engine.dispose()
-
-Or close the connection
-
-connection.close()
-"""

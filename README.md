@@ -3,32 +3,45 @@
 ## Table of Contents
 
 1. [Project Description](#project-description)
-2. [Installation](#installation)
-3. [Usage](#usage)
-4. [File Structure](#file-structure)
-5. [License](#license)
+2. [Features](#features)
+3. [Technologies Used](#technologies-used)
+4. [Installation](#installation)
+5. [Usage](#usage)
+6. [File Structure](#file-structure)
+7. [License](#license)
 
 ## Project Description
 
 MRDC aims to centralise retail data from multiple sources into a single, clean, and easily queryable database. 
-The project utilises Python for data extraction, cleaning, and uploading to a PostgreSQL database managed through pgAdmin 4.
+The project is part of an AICore course and is designed to serve as a single source of truth for sales data for a multinational retail company. 
+It extracts, cleans, and uploads data from various sources, making it easily accessible and analyzable for team members.
 
-### What It Does
-- Extracts data from various sources (CSV, APIs, databases, etc.)
-- Cleans the data to remove inconsistencies and errors
-- Uploads the cleaned data to a PostgreSQL database
-- Allows for SQL-based querying of the data for business analytics
+### Motivation
 
-### Aim of the Project
-- To provide a single source of truth for retail data
-- To make the data easily accessible and queryable
-- To automate the ETL (Extract, Transform, Load) process
+The motivation behind this project is to solve the problem of scattered sales data across different data sources in a multinational retail company. 
+The project aims to streamline data accessibility and analysis by centralising this data.
 
-### What I Learned
-- Data extraction from various sources
-- Data cleaning techniques
-- Database management with PostgreSQL and pgAdmin 4
-- Python programming for data manipulation and database interactions
+### Problem Statement
+
+- Historical data of users is stored in an AWS database
+- Users' card details are stored in PDF documents in an AWS S3 bucket
+- Store data can be retrieved through an API
+- Product information is stored in CSV format in an AWS S3 bucket
+- Sale details are stored in a JSON file
+
+## Features
+
+- Data extraction from multiple sources including AWS databases, S3 buckets, and APIs
+- Data cleaning to prepare for database storage
+- Database schema creation and management
+- Querying capabilities for up-to-date business metrics
+
+## Technologies Used
+
+- Python for data extraction, cleaning, and database management
+- PostgreSQL as the database
+- AWS for cloud storage
+- pgAdmin 4 for database administration
 
 ## Installation
 
@@ -54,4 +67,3 @@ The project utilises Python for data extraction, cleaning, and uploading to a Po
 ## License
 
 MIT License. See `LICENSE.md` for more details.
-

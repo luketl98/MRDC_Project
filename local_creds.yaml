@@ -1,5 +1,0 @@
-DB_HOST: localhost
-DB_PASSWORD: Aphrodite-186
-DB_USER: postgres
-DB_DATABASE: sales_data
-DB_PORT: 5432

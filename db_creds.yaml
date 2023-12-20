@@ -1,5 +1,0 @@
-DB_HOST: data-handling-project-readonly.cq2e8zno855e.eu-west-1.rds.amazonaws.com
-DB_PASSWORD: AiCore2022
-DB_USER: aicore_admin
-DB_DATABASE: postgres
-DB_PORT: 5432

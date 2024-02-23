@@ -4,7 +4,8 @@ import requests
 import boto3
 from io import StringIO
 
-class DataExtractor:            
+
+class DataExtractor:
     def __init__(self, header):
         """Initializes the DataExtractor with the provided request header."""
         self.header = header
@@ -21,7 +22,7 @@ class DataExtractor:
         Returns:
             DataFrame with the content of the table.
         """
-        
+
         return pd.read_sql_table(table_name, database_connector.engine)
 
     def retrieve_pdf_data(self, link):
@@ -36,7 +37,7 @@ class DataExtractor:
         """
         df_list = tabula.read_pdf(link, pages='all')
         return pd.concat(df_list, ignore_index=True)
-    
+
     def list_number_of_stores(self, endpoint):
         """
         Retrieves the number of stores from a given endpoint.
@@ -49,7 +50,7 @@ class DataExtractor:
         """
         response = requests.get(endpoint, headers=self.header)
         return response.json()['number_stores']
-    
+
     def retrieve_stores_data(self, endpoint, num_stores):
         """
         Retrieves data about a certain number of stores from a given endpoint.
@@ -59,7 +60,8 @@ class DataExtractor:
             num_stores: Number of stores to retrieve data for.
 
         Returns:
-            DataFrame with the data about the stores. Returns None if no data could be retrieved.
+            DataFrame with the data about the stores.
+            Returns None if no data could be retrieved.
         """
         data = []
         for i in range(num_stores):
@@ -67,7 +69,6 @@ class DataExtractor:
                 response = requests.get(f"{endpoint}/{i}", headers=self.header)
                 if response.status_code == 200:
                     data.append(response.json())
-
 
             except Exception as e:
                 print(f"There was an error: {e}")
@@ -88,7 +89,9 @@ class DataExtractor:
         Returns:
             DataFrame with the content of the file.
         """
-        bucket_name, key = s3_address.split('/')[2], '/'.join(s3_address.split('/')[3:])
+        s3_address_parts = s3_address.split('/')
+        bucket_name = s3_address_parts[2]
+        key = '/'.join(s3_address_parts[3:])
         s3 = boto3.client('s3')
         csv_obj = s3.get_object(Bucket=bucket_name, Key=key)
         body = csv_obj['Body'].read().decode('utf-8')

@@ -9,10 +9,11 @@ class DatabaseConnector:
     def __init__(self, credentials):
         """
         Initialize DatabaseConnector with local database credentials.
-        If local_creds is not provided, database credentials will be read from a file.
+        If local_creds is not provided,
+        database credentials will be read from a file.
         """
         read_db_creds = self.read_db_creds(credentials)
-        
+
         self.engine = self.init_db_engine(read_db_creds)
 
     @staticmethod
@@ -26,20 +27,26 @@ class DatabaseConnector:
 
     def init_db_engine(self, credentials):
         """
-        Initialize the database engine using either local or remote credentials.
+        Initialize the database engine using either
+        local or remote credentials.
         """
         print(credentials['DB_HOST'])
-        
-        db_url = f"postgresql://{credentials['DB_USER']}:{credentials['DB_PASSWORD']}@{credentials['DB_HOST']}:{credentials['DB_PORT']}/{credentials['DB_DATABASE']}"
 
+        db_url = (
+            f"postgresql://{credentials['DB_USER']}:"
+            f"{credentials['DB_PASSWORD']}@"
+            f"{credentials['DB_HOST']}:"
+            f"{credentials['DB_PORT']}/"
+            f"{credentials['DB_DATABASE']}"
+        )
         return create_engine(db_url)
-
 
     def list_db_tables(self):
         """
         Static method to list all public tables in the database.
         """
-        query = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
+        query = "SELECT table_name FROM information_schema.tables "
+        "WHERE table_schema='public'"
         with self.engine.connect() as connection:
             result = connection.execute(text(query))
             table_names = [row[0] for row in result.fetchall()]
@@ -49,12 +56,9 @@ class DatabaseConnector:
         """
         Upload a DataFrame to the specified table in the database.
         """
-
         with self.engine.connect() as conn:
-            # conn.execute(text("SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE"))
             df.to_sql(table_name, conn, if_exists='replace', index=False)
             conn.commit()
-
 
     @staticmethod
     def get_table_schema(self, table_name):
@@ -63,4 +67,3 @@ class DatabaseConnector:
         """
         inspector = inspect(self.engine)
         return inspector.get_columns(table_name)
-

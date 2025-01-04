@@ -1,2 +1,14 @@
+# Configuration Files
 db_creds.yaml
 local_creds.yaml
+
+# OS-specific
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints/

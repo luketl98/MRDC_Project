@@ -31,8 +31,24 @@ local_db_connector = DatabaseConnector('local_creds.yaml')
 engine = local_db_connector.engine
 
 # New user prompt for schema reset
-reset_choice = input("Do you want to reset the database schema? (yes/no): ")
-if reset_choice.lower() == 'yes':
+def get_user_confirmation(prompt):
+    """
+    Prompt the user for a yes or no response.
+    Only valid responses are 'yes' or 'no' (case-insensitive).
+    Parameters:
+        prompt: str
+            The prompt message to display to the user.
+    Returns:
+        bool: True if user confirms 'yes', False if 'no'.
+    """
+    while True:
+        response = input(prompt).strip().lower()
+        if response in ['yes', 'no']:
+            return response == 'yes'
+        print("Invalid input. Please enter 'yes' or 'no'.")
+
+# Use the helper function for the schema reset confirmation
+if get_user_confirmation("Do you want to reset the database schema? (yes/no): "):
     reset_database_schema(engine)
 
 # Initialise data extraction and cleaning components
